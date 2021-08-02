@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Initialize a select button -->
+<select id="selectButton"></select>
+
+<style> /* set the CSS */
+
+.bar { 
+    fill: steelblue; 
+}
+
+div.tooltip {
+      color: white;
+      position: absolute;
+      text-align: center;
+      width: 60px;
+      height: 28px;
+      padding: 2px;
+      font: 12px sans-serif;
+      background: rgba(0,0,0,.8);
+      border: 2px solid black;
+      pointer-events: none;
+    }
+
+</style>
+<body>
+	
+<!-- load the d3.js library -->    	
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 50, right: 20, bottom: 150, left: 80},
+    width = 1400 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+// set the ranges
+var x = d3.scaleBand()
+          .range([0, width])
+          .padding(0.1);
+var y = d3.scaleLinear()
+          .range([height, 0]);
+          
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Define the div for the tooltip
+const div = d3
+    .select('body')
+    .append('div')
+    .attr('class', 'tooltip')
+    .style('opacity', 0);
+
+// get the data
+d3.csv("athletesInDisciplinePerCountryTop.csv").then(function(data) {
+
+  var allGroups = ['Archery', 'Artistic Gymnastics',
+       'Artistic Swimming', 'Athletics', 'Badminton', 'Baseball/Softball',
+       'Basketball', '3x3 Basketball', 'Beach Volleyball', 'Boxing', 'Canoe Slalom',
+       'Canoe Sprint', 'Cycling BMX Freestyle', 'Cycling BMX Racing',
+       'Cycling Mountain Bike', 'Cycling Road', 'Cycling Track', 'Diving',
+       'Equestrian', 'Fencing', 'Football', 'Golf', 'Handball', 'Hockey',
+       'Judo', 'Karate', 'Marathon Swimming', 'Modern Pentathlon',
+       'Rhythmic Gymnastics', 'Rowing', 'Rugby Sevens', 'Sailing',
+       'Shooting', 'Skateboarding', 'Sport Climbing', 'Surfing',
+       'Swimming', 'Table Tennis', 'Taekwondo', 'Tennis',
+       'Trampoline Gymnastics', 'Triathlon', 'Volleyball', 'Water Polo',
+       'Weightlifting', 'Wrestling']
+
+  d3.select('#selectButton')
+    .selectAll('myOptions')
+    .data(allGroups)
+    .enter()
+    .append('option')
+    .text(function (d) {return d;})   // text showed on the menu
+    .attr("value", function (d) {return d;})   // value returned
+  
+  // Scale the range of the data in the domains
+  x.domain(data.map(function(d) { return d['NOC Archery']; }));
+  y.domain([0, d3.max(data, function(d) { return +d['NumAthletes Archery']; })]);
+
+  // Append the rectangles for the bar chart
+  var bars = svg.selectAll(".bar")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d['NOC Archery']); })
+      .attr("width", x.bandwidth())
+      .attr("y", function(d) { return y(+d['NumAthletes Archery']); })
+      .attr("height", function(d) { return height - y(+d['NumAthletes Archery']); });
+
+  // Add x axis
+  svg.append("g")
+      .attr("class", "xaxis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+      .selectAll('text')
+      .attr("transform", "rotate(-90)")
+      .attr("y", -5)
+      .attr("x", -10)
+      .attr("text-anchor", "end");
+
+  // Add y axis
+  svg.append("g")
+      .attr("class", "yaxis")
+      .call(d3.axisLeft(y));
+
+  // Add y axis label
+  svg.append("text")
+     .attr("transform", "rotate(-90)")
+     .attr("y", 0 - margin.left)
+     .attr("x", 0 - (height/2))   // x and y are switched after rotate(-90)
+     .attr("dy", "2em")
+     .style("text-anchor", "middle")
+     .text("Number of athletes")
+
+  // Add value text to the bars
+  var text = svg.selectAll('text.bar')
+  .data(data)
+  .enter().append('text')
+  .attr('text-anchor', 'middle')
+  .attr("x", function(d) { return x(d['NOC Archery']) + x.bandwidth()/2; })
+  .attr("y", function(d) { return y(+d['NumAthletes Archery']) - 5; })
+  .text(function(d) { return +d['NumAthletes Archery'] });
+
+  // ================ update the chart =========================
+  function update(selectedGroup) {
+    var dataFilter = data.map(function (d) {
+      return {
+        'NOC': d['NOC '+selectedGroup],
+        'NumAthletes': d['NumAthletes '+selectedGroup] 
+      }
+    })
+
+    // Scale the range of the data in the domains
+    x.domain(dataFilter.map(function(d) { return d['NOC']; }));
+    y.domain([0, d3.max(dataFilter, function(d) { return +d['NumAthletes']; })]);
+
+    bars.data(dataFilter)
+    .transition()
+    .duration(1000)
+    .attr("x", function(d) { return x(d['NOC']); })
+    .attr("y", function(d) { return y(d['NumAthletes']); })
+    .attr("height", function(d) { return height - y(d['NumAthletes']); });
+
+    svg.selectAll("g.xaxis").transition().duration(1000).call(d3.axisBottom(x))
+    .selectAll('text')
+      .attr("transform", "rotate(-90)")
+      .attr("y", -5)
+      .attr("x", -10)
+      .attr("text-anchor", "end");
+    
+    svg.selectAll("g.yaxis").transition().duration(1000).call(d3.axisLeft(y));
+
+    text.data(dataFilter)
+      .transition()
+      .duration(1000)
+      .attr("x", function(d) { return x(d['NOC']) + x.bandwidth()/2; })
+      .attr("y", function(d) { return y(+d['NumAthletes']) - 5; })
+      .text(function(d) { return +d['NumAthletes'] });
+
+  }
+
+  // when the button is changed, run the update function
+  d3.select('#selectButton').on("change", function(d) {
+    var selectedOption = d3.select(this).property("value")
+    update(selectedOption)
+  })
+
+  // Add x axis label
+  //svg.append("text")
+  //   .attr("x", width/2)
+  //   .attr("y", height+margin.bottom)
+  //   .attr("dy", "-1em")
+  //   .style("text-anchor", "middle")
+  //   .text("Name of country")
+
+
+  // Add title
+  svg.append('text').attr("text-anchor", "middle")
+      .attr("x", width/2).attr("y", -25)
+      .text('Tokyo 2020 Olympics: Which delegations have the most athletes for each discipline? Please select discipline from the drop-down menu').style('font-size', "20px");
+
+
+});
+
+</script>
+
+<a href="second_scene.html">
+    <br/>
+    Back
+</a>
+
+</body>

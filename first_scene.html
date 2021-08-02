@@ -7,7 +7,7 @@
 }
 
 div.tooltip {
-      color: orange;
+      color: white;
       position: absolute;
       text-align: center;
       width: 60px;
@@ -56,12 +56,12 @@ const div = d3
     .style('opacity', 0);
 
 // get the data
-d3.csv("athletesPerCountry.csv").then(function(data) {
+d3.csv("athletesPerCountryTop.csv").then(function(data) {
 
   // Scale the range of the data in the domains
   x.domain(data.map(function(d) { return d.NOC; }));
-  //y.domain([0, d3.max(data, function(d) { return d.NumAthletes; })]);
-  y.domain([0,650]);
+  y.domain([0, d3.max(data, function(d) { return d.NumAthletes; })]);
+
   // Append the rectangles for the bar chart
   svg.selectAll(".bar")
       .data(data)
@@ -71,24 +71,7 @@ d3.csv("athletesPerCountry.csv").then(function(data) {
       .attr("x", function(d) { return x(d.NOC); })
       .attr("width", x.bandwidth())
       .attr("y", function(d) { return y(d.NumAthletes); })
-      .attr("height", function(d) { return height - y(d.NumAthletes); })
-      .style('cursor', 'pointer')
-      .on('mouseover', function(d,i) {
-          div
-            .transition()
-            .duration(200)
-            .style('opacity', 1.0);
-          div
-            .html(d.NOC + "<br/>" + "#Athletes:" + d.NumAthletes + "<br/>")
-            .style('left', d3.event.pageX + 'px')
-            .style('top', d3.event.pageY - 28 + 'px');
-        })
-        .on('mouseout', function() {
-          div
-            .transition()
-            .duration(500)
-            .style('opacity', 0);
-        });
+      .attr("height", function(d) { return height - y(d.NumAthletes); });
 
   // Add x axis
   svg.append("g")
@@ -113,6 +96,15 @@ d3.csv("athletesPerCountry.csv").then(function(data) {
      .style("text-anchor", "middle")
      .text("Number of athletes")
 
+   // Add values to the bars
+  svg.selectAll('text.bar')
+      .data(data)
+      .enter().append('text')
+      .attr('text-anchor', 'middle')
+      .attr("x", function(d) { return x(d.NOC) + x.bandwidth()/2; })
+      .attr("y", function(d) { return y(d.NumAthletes) - 5; })
+      .text(function(d) { return d.NumAthletes; });
+
   // Add x axis label
   //svg.append("text")
   //   .attr("x", width/2)
@@ -125,15 +117,20 @@ d3.csv("athletesPerCountry.csv").then(function(data) {
   // Add title
   svg.append('text').attr("text-anchor", "middle")
       .attr("x", width/2).attr("y", -25)
-      .text('Tokyo 2020 Olympics: All delegations').style('font-size', "20px");
+      .text('Tokyo 2020 Olympics: Which are the largest 20 delegations?').style('font-size', "20px");
 
 
 });
 
 </script>
 
-<a href="first_scene.html">
+<a href="second_scene.html">
     Next
 </a>
+<a href="index.html">
+    <br/>
+    Back
+</a>
+
 
 </body>
